@@ -1,38 +1,43 @@
 <?php
 session_start();
-//error_reporting(0);
+error_reporting(0);
 include('includes/config.php');
 if(strlen($_SESSION['alogin'])==0)
 	{	
 header('location:index.php');
 }
 else{
-
+// Code for change password	
 if(isset($_POST['submit']))
+	{
+$password=md5($_POST['password']);
+$newpassword=md5($_POST['newpassword']);
+$username=$_SESSION['alogin'];
+	$sql ="SELECT Password FROM admin WHERE UserName=:username and Password=:password";
+$query= $dbh -> prepare($sql);
+$query-> bindParam(':username', $username, PDO::PARAM_STR);
+$query-> bindParam(':password', $password, PDO::PARAM_STR);
+$query-> execute();
+$results = $query -> fetchAll(PDO::FETCH_OBJ);
+if($query -> rowCount() > 0)
 {
-$adminid=$_SESSION['alogin'];
-$name=$_POST['name'];
-$email=$_POST['email'];
-$mobile=$_POST['mobile'];
-
-$sql="update admin set Name=:name,EmailId=:email,MobileNumber=:mobile where UserName=:adminid";
-$query = $dbh->prepare($sql);
-$query->bindParam(':name',$name,PDO::PARAM_STR);
-$query->bindParam(':email',$email,PDO::PARAM_STR);
-$query->bindParam(':mobile',$mobile,PDO::PARAM_STR);
-$query->bindParam(':adminid',$adminid,PDO::PARAM_STR);
-$query->execute();
-
-echo "<script>alert('Profile has been updated.');</script>";
-echo "<script> window.location.href =profile.php;</script>";
-
+$con="update admin set Password=:newpassword where UserName=:username";
+$chngpwd1 = $dbh->prepare($con);
+$chngpwd1-> bindParam(':username', $username, PDO::PARAM_STR);
+$chngpwd1-> bindParam(':newpassword', $newpassword, PDO::PARAM_STR);
+$chngpwd1->execute();
+$msg="Your Password succesfully changed";
+}
+else {
+$error="Your current password is wrong";	
+}
 }
 ?>
 
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>TMS | Admin Profile</title>
+<title>TMS | Admin Change Password</title>
 
 <script type="application/x-javascript"> addEventListener("load", function() { setTimeout(hideURLbar, 0); }, false); function hideURLbar(){ window.scrollTo(0,1); } </script>
 
@@ -44,7 +49,18 @@ echo "<script> window.location.href =profile.php;</script>";
 <link href='//fonts.googleapis.com/css?family=Roboto:700,500,300,100italic,100,400' rel='stylesheet' type='text/css'/>
 <link href='//fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" href="css/icon-font.min.css" type='text/css' />
-
+<script type="text/javascript">
+function valid()
+{
+if(document.chngpwd.newpassword.value!= document.chngpwd.confirmpassword.value)
+{
+alert("New Password and Confirm Password Field do not match  !!");
+document.chngpwd.confirmpassword.focus();
+return false;
+}
+return true;
+}
+</script>
   <style>
 		.errorWrap {
     padding: 10px;
@@ -77,85 +93,61 @@ echo "<script> window.location.href =profile.php;</script>";
 				</div>
 <!--heder end here-->
 	<ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="dashboard.php">Home</a><i class="fa fa-angle-right"></i>Admin Profile</li>
+                <li class="breadcrumb-item"><a href="dashboard.php">Home</a><i class="fa fa-angle-right"></i>Change Password</li>
             </ol>
 		<!--grid-->
  	<div class="grid-form">
 
   <div class="grid-form1">
 
-  	        	  
+  	        	  <?php if($error){?><div class="errorWrap"><strong>ERROR</strong>:<?php echo htmlentities($error); ?> </div><?php } 
+				else if($msg){?><div class="succWrap"><strong>SUCCESS</strong>:<?php echo htmlentities($msg); ?> </div><?php }?>
 				
   <div class="panel-body">
 					<form  name="chngpwd" method="post" class="form-horizontal" onSubmit="return valid();">
-						 <?php 
-              $adminid=$_SESSION['alogin'];
-              $sql ="SELECT * from admin where UserName=:adminid";
-              $query= $dbh -> prepare($sql);
-              $query->bindParam(':adminid',$adminid, PDO::PARAM_STR);
-              $query-> execute();
-              $results = $query -> fetchAll(PDO::FETCH_OBJ);
-              $cnt=1;
-              if($query->rowCount() > 0)
-              {
-              foreach($results as $result)
-              { ?>
-
-              		<div class="form-group">
-							<label class="col-md-2 control-label">User Name</label>
-							<div class="col-md-8">
-								<div class="input-group">
-									<span class="input-group-addon">
-										<i class="fa fa-key"></i>
-									</span>
-									 <input class="form-control1" type="text" name="name" id="name" value="<?php echo $result->UserName;?>">
-								</div>
-							</div>
-						</div>
 
 						<div class="form-group">
-							<label class="col-md-2 control-label">Name</label>
+							<label class="col-md-2 control-label">Current Password</label>
 							<div class="col-md-8">
 								<div class="input-group">
 									<span class="input-group-addon">
 										<i class="fa fa-key"></i>
 									</span>
-									 <input class="form-control1" type="text" name="name" id="name" value="<?php echo $result->Name;?>">
+									<input type="password" name="password" class="form-control1" id="exampleInputPassword1" placeholder="Current Password" required="">
 								</div>
 							</div>
 						</div>
 
 	<div class="form-group">
-							<label class="col-md-2 control-label">Email</label>
+							<label class="col-md-2 control-label">New Password</label>
 							<div class="col-md-8">
 								<div class="input-group">
 									<span class="input-group-addon">
 										<i class="fa fa-key"></i>
 									</span>
-								<input class="form-control1" type="text" name="email" id="email" value="<?php echo $result->EmailId;?>">
+									<input type="password" class="form-control1" name="newpassword" id="newpassword" placeholder="New Password" required="">
 								</div>
 							</div>
 						</div>
 
 	<div class="form-group">
-							<label class="col-md-2 control-label">Mobile No</label>
+							<label class="col-md-2 control-label">Confirm Password</label>
 							<div class="col-md-8">
 								<div class="input-group">
 									<span class="input-group-addon">
 										<i class="fa fa-key"></i>
 									</span>
-								<input class="form-control1" type="text" name="mobile" id="mobile" value="<?php echo $result->MobileNumber;?>">
+									<input type="password" class="form-control1" name="confirmpassword" id="confirmpassword" placeholder="Confrim Password" required="">
 								</div>
 							</div>
 						</div>
-							
-		 <?php }} ?>
+
 						<div class="col-sm-8 col-sm-offset-2">
 				<button type="submit" name="submit" class="btn-primary btn">Submit</button>
 				<button type="reset" class="btn-inverse btn">Reset</button>
 			</div>
 		</div>
-	
+			
 					</form>
 	</div>
 </div>
